@@ -2,12 +2,16 @@
 #define CONFIGURATION_PRUSA_H
 
 #include <limits.h>
+#include "printers.h"
 /*------------------------------------
 GENERAL SETTINGS
 *------------------------------------*/
 
 // Printer revision
 #define PRINTER_TYPE PRINTER_MK2
+#define PRINTER_NAME PRINTER_MK2_NAME
+#define PRINTER_MMU_TYPE PRINTER_MK2              // dummy item (due to successfully compilation / building only)
+#define PRINTER_MMU_NAME PRINTER_MK2_NAME         // dummy item (due to successfully compilation / building only)
 #define FILAMENT_SIZE "1_75mm_MK2"
 #define NOZZLE_TYPE "E3Dv6full"
 
@@ -86,8 +90,9 @@ AXIS SETTINGS
 #define DEFAULT_MAX_ACCELERATION      {9000,9000,500,10000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
 #define DEFAULT_MAX_ACCELERATION_SILENT     {960, 960, 200, 5000}    // (mm/sec^2) max acceleration (M201), silent mode
 
-#define DEFAULT_ACCELERATION          1500    // X, Y, Z and E max acceleration in mm/s^2 for printing moves
+#define DEFAULT_ACCELERATION          1500   // X, Y, Z and E max acceleration in mm/s^2 for printing moves
 #define DEFAULT_RETRACT_ACCELERATION  1500   // X, Y, Z and E max acceleration in mm/s^2 for retracts
+#define DEFAULT_TRAVEL_ACCELERATION   1500   // X, Y, Z and E max acceleration in mm/s^2 for travels
 
 
 #define MANUAL_FEEDRATE {3000, 3000, 1000, 100}   // set the speeds for manual moves (mm/min)
@@ -96,6 +101,9 @@ AXIS SETTINGS
 
 // New XYZ calibration
 //#define NEW_XYZCAL
+
+// Watchdog support
+#define WATCHDOG
 
 
 /*------------------------------------
@@ -250,7 +258,7 @@ BED SETTINGS
 #define BED_ADJUSTMENT_UM_MAX 100
 
 #define MESH_HOME_Z_CALIB 0.2
-#define MESH_HOME_Z_SEARCH 5 //Z lift for homing, mesh bed leveling etc.
+#define MESH_HOME_Z_SEARCH 5.0f           // Z lift for homing, mesh bed leveling etc.
 
 #define X_PROBE_OFFSET_FROM_EXTRUDER 23     // Z probe to nozzle X offset: -left  +right
 #define Y_PROBE_OFFSET_FROM_EXTRUDER 9     // Z probe to nozzle Y offset: -front +behind
@@ -312,12 +320,24 @@ PREHEAT SETTINGS
 *------------------------------------*/
 
 #define FARM_PREHEAT_HOTEND_TEMP 250
-#define FARM_PREHEAT_HPB_TEMP 40
+#define FARM_PREHEAT_HPB_TEMP 80
 #define FARM_PREHEAT_FAN_SPEED 0
 
 #define PLA_PREHEAT_HOTEND_TEMP 215
 #define PLA_PREHEAT_HPB_TEMP 55
-#define PLA_PREHEAT_FAN_SPEED 0  
+#define PLA_PREHEAT_FAN_SPEED 0
+
+#define PVB_PREHEAT_HOTEND_TEMP 215
+#define PVB_PREHEAT_HPB_TEMP 75
+#define PVB_PREHEAT_FAN_SPEED 0
+
+#define ASA_PREHEAT_HOTEND_TEMP 260
+#define ASA_PREHEAT_HPB_TEMP 105
+#define ASA_PREHEAT_FAN_SPEED 0
+
+#define PC_PREHEAT_HOTEND_TEMP 275
+#define PC_PREHEAT_HPB_TEMP 105
+#define PC_PREHEAT_FAN_SPEED 0
 
 #define ABS_PREHEAT_HOTEND_TEMP 255
 #define ABS_PREHEAT_HPB_TEMP 100
@@ -435,6 +455,7 @@ THERMISTORS SETTINGS
 // Safety timer
 #define SAFETYTIMER
 #define DEFAULT_SAFETYTIMER_TIME_MINS 30
+#define FARM_DEFAULT_SAFETYTIMER_TIME_ms (45*60*1000ul)
 
 #define M600_TIMEOUT 600  //seconds
 

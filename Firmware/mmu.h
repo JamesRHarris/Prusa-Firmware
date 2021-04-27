@@ -14,8 +14,8 @@ extern uint8_t mmu_extruder;
 extern uint8_t tmp_extruder;
 
 extern int8_t mmu_finda;
+extern uint32_t mmu_last_finda_response;
 extern bool ir_sensor_detected;
-extern bool mmu_loading_flag;
 
 extern int16_t mmu_version;
 extern int16_t mmu_buildnr;
@@ -59,7 +59,7 @@ enum class MmuCmd : uint_least8_t
     K4,
     R0,
     S3,
-    W0,
+    W0, //!< Wait and signal load error
 };
 
 inline MmuCmd operator+ (MmuCmd cmd, uint8_t filament)
@@ -104,10 +104,9 @@ extern void extr_mov(float shift, float feed_rate);
 extern void change_extr(int extr);
 extern int get_ext_nr();
 extern void display_loading();
-extern void extr_adj(int extruder);
+extern void extr_adj(uint8_t extruder);
 extern void extr_unload();
-//-//
-extern void extr_unload_();
+
 extern void extr_adj_0();
 extern void extr_adj_1();
 extern void extr_adj_2();
@@ -135,7 +134,7 @@ extern void mmu_eject_filament(uint8_t filament, bool recover);
 #ifdef MMU_HAS_CUTTER
 extern void mmu_cut_filament(uint8_t filament_nr);
 #endif //MMU_HAS_CUTTER
-extern void mmu_continue_loading();
+extern void mmu_continue_loading(bool blocking);
 extern void mmu_filament_ramming();
 extern void mmu_wait_for_heater_blocking();
 extern void mmu_load_step(bool synchronize = true);

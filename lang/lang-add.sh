@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # lang-add.sh - multi-language support script
 #  add new texts from list (lang_add.txt) to all dictionary files
@@ -51,7 +51,7 @@ if ! [ -e lang_add.txt ]; then
 fi
 
 cat lang_add.txt | sed 's/^/"/;s/$/"/' | while read new_s; do
-	if grep "$new_s" lang_en.txt >/dev/nul; then
+	if grep "$new_s" lang_en.txt >/dev/null; then
 		echo "text already exist:"
 		echo "$new_s"
 		echo
@@ -66,8 +66,15 @@ cat lang_add.txt | sed 's/^/"/;s/$/"/' | while read new_s; do
 		insert_xx "$new_s" 'fr'
 		insert_xx "$new_s" 'it'
 		insert_xx "$new_s" 'pl'
+#Community language support
+#Dutch
+		insert_xx "$new_s" 'nl'
+
+#Use the 2 lines below as a template and replace 'qr'
+##New language
+#		insert_xx "$new_s" 'qr'
 	fi
 done
 
-read x
+read -t 5
 exit 0

@@ -10,14 +10,6 @@
 #endif
 #define BED_CHECK_INTERVAL 5000 //ms between checks in bang-bang control
 
-//// Heating sanity check:
-// This waits for the watch period in milliseconds whenever an M104 or M109 increases the target temperatureLCD_PROGRESS_BAR
-// If the temperature has not increased at the end of that period, the target temperature is set to zero.
-// It can be reset with another M104/M109. This check is also only triggered if the target temperature and the current temperature
-//  differ by at least 2x WATCH_TEMP_INCREASE
-//#define WATCH_TEMP_PERIOD 40000 //40 seconds
-//#define WATCH_TEMP_INCREASE 10  //Heat up at least 10 degree in 20 seconds
-
 #ifdef PIDTEMP
   // this adds an experimental additional term to the heating power, proportional to the extrusion speed.
   // if Kc is chosen well, the additional required power due to increased melting should be compensated.
@@ -70,8 +62,19 @@
 // before setting a PWM value. (Does not work with software PWM for fan on Sanguinololu)
 #define FAN_KICKSTART_TIME 800
 
-
-
+/**
+ * Auto-report all at once with M155 S<seconds> C[bitmask] with single timer
+ * 
+ * bit 0 = Auto-report temperatures
+ * bit 1 = Auto-report fans
+ * bit 2 = Auto-report position
+ * bit 3 = free
+ * bit 4 = free
+ * bit 5 = free
+ * bit 6 = free
+ * bit 7 = free
+*/
+#define AUTO_REPORT
 
 //===========================================================================
 //=============================Mechanical Settings===========================
@@ -160,7 +163,6 @@
 #define Z_HOME_RETRACT_MM 2
 //#define QUICK_HOME  //if this is defined, if both x and y are to be homed, a diagonal move will be performed initially.
 
-#define AXIS_RELATIVE_MODES {0, 0, 0, 0}
 #define MAX_STEP_FREQUENCY 40000 // Max step frequency for Ultimaker (5000 pps / half step). Toshiba steppers are 4x slower, but Prusa3D does not use those.
 //By default pololu step drivers require an active high signal. However, some high power drivers require an active low signal as step.
 #define INVERT_X_STEP_PIN 0
@@ -229,33 +231,23 @@
 * SD sorting uses static allocation (as set by SDSORT_LIMIT), allowing the
 * compiler to calculate the worst-case usage and throw an error if the SRAM
 * limit is exceeded.
-*
-*  - SDSORT_USES_RAM provides faster sorting via a static directory buffer.
-*  - SDSORT_USES_STACK does the same, but uses a local stack-based buffer.
-*  - SDSORT_CACHE_NAMES will retain the sorted file listing in RAM. (Expensive!)
-*  - SDSORT_DYNAMIC_RAM only uses RAM when the SD menu is visible. (Use with caution!)
 */
 	#define SDCARD_SORT_ALPHA //Alphabetical sorting of SD files menu
 	
 	// SD Card Sorting options
-	// In current firmware Prusa Firmware version,
-	// SDSORT_CACHE_NAMES and SDSORT_DYNAMIC_RAM is not supported and must be set to 0.
 	#ifdef SDCARD_SORT_ALPHA
 	  #define SD_SORT_TIME 0
 	  #define SD_SORT_ALPHA 1
 	  #define SD_SORT_NONE 2
+	  // #define SHELLSORT
+	  // #define SORTING_DUMP
 	
 	  #define SDSORT_LIMIT       100    // Maximum number of sorted items (10-256).
 	  #define FOLDER_SORTING     -1     // -1=above  0=none  1=below
-	  #define SDSORT_GCODE       0  // Allow turning sorting on/off with LCD and M34 g-code.
-	  #define SDSORT_USES_RAM    0  // Pre-allocate a static array for faster pre-sorting.
-	  #define SDSORT_USES_STACK  0  // Prefer the stack for pre-sorting to give back some SRAM. (Negated by next 2 options.)
-	  #define SDSORT_CACHE_NAMES 0  // Keep sorted items in RAM longer for speedy performance. Most expensive option.
-	  #define SDSORT_DYNAMIC_RAM 0  // Use dynamic allocation (within SD menus). Least expensive option. Set SDSORT_LIMIT before use!
 	#endif
 	
 	#if defined(SDCARD_SORT_ALPHA)
-	  #define HAS_FOLDER_SORTING (FOLDER_SORTING || SDSORT_GCODE)
+	  #define HAS_FOLDER_SORTING (FOLDER_SORTING)
 	#endif
 
 // Enable the option to stop SD printing when hitting and endstops, needs to be enabled from the LCD menu when this option is enabled.
@@ -276,43 +268,32 @@
 #endif
 
 /**
-    * Implementation of linear pressure control
-    *
-    * Assumption: advance = k * (delta velocity)
-    * K=0 means advance disabled.
-    * See Marlin documentation for calibration instructions.
-    */
+ * Linear Pressure Control v1.5
+ *
+ * Assumption: advance [steps] = k * (delta velocity [steps/s])
+ * K=0 means advance disabled.
+ *
+ * NOTE: K values for LIN_ADVANCE 1.5 differs from earlier versions!
+ *
+ * Set K around 0.22 for 3mm PLA Direct Drive with ~6.5cm between the drive gear and heatbreak.
+ * Larger K values will be needed for flexible filament and greater distances.
+ * If this algorithm produces a higher speed offset than the extruder can handle (compared to E jerk)
+ * print acceleration will be reduced during the affected moves to keep within the limit.
+ *
+ * See http://marlinfw.org/docs/features/lin_advance.html for full instructions.
+ * Mention @Sebastianv650 on GitHub to alert the author of any issues.
+ */
 #define LIN_ADVANCE
 
 #ifdef LIN_ADVANCE
-  #define LIN_ADVANCE_K 0 //Try around 45 for PLA, around 25 for ABS.
-
- /**
-        * Some Slicers produce Gcode with randomly jumping extrusion widths occasionally.
-        * For example within a 0.4mm perimeter it may produce a single segment of 0.05mm width.
-        * While this is harmless for normal printing (the fluid nature of the filament will
-        * close this very, very tiny gap), it throws off the LIN_ADVANCE pressure adaption.
-        *
-        * For this case LIN_ADVANCE_E_D_RATIO can be used to set the extrusion:distance ratio
-        * to a fixed value. Note that using a fixed ratio will lead to wrong nozzle pressures
-        * if the slicer is using variable widths or layer heights within one print!
-        *
-        * This option sets the default E:D ratio at startup. Use `M900` to override this value.
-        *
-        * Example: `M900 W0.4 H0.2 D1.75`, where:
-        *   - W is the extrusion width in mm
-        *   - H is the layer height in mm
-        *   - D is the filament diameter in mm
-        *
-        * Example: `M900 R0.0458` to set the ratio directly.
-        *
-        * Set to 0 to auto-detect the ratio based on given Gcode G1 print moves.
-        *
-        * Slic3r (including Prusa Slic3r) produces Gcode compatible with the automatic mode.
-        * Cura (as of this writing) may produce Gcode incompatible with the automatic mode.
-        */
-#define LIN_ADVANCE_E_D_RATIO 0 // The calculated ratio (or 0) according to the formula W * H / ((D / 2) ^ 2 * PI)
-                                // Example: 0.4 * 0.2 / ((1.75 / 2) ^ 2 * PI) = 0.033260135
+  #define LA_K_DEF    0        // Default K factor (Unit: mm compression per 1mm/s extruder speed)
+  #define LA_K_MAX    10       // Maximum acceptable K factor (exclusive, see notes in planner.cpp:plan_buffer_line)
+  #define LA_LA10_MIN LA_K_MAX // Lin. Advance 1.0 threshold value (inclusive)
+  //#define LA_FLOWADJ         // Adjust LA along with flow/M221 for uniform width
+  //#define LA_NOCOMPAT        // Disable Linear Advance 1.0 compatibility
+  //#define LA_LIVE_K          // Allow adjusting K in the Tune menu
+  //#define LA_DEBUG           // If enabled, this will generate debug information output over USB.
+  //#define LA_DEBUG_LOGIC     // @wavexx: setup logic channels for isr debugging
 #endif
 
 // Arc interpretation settings:
@@ -346,6 +327,11 @@ const unsigned int dropsegments=5; //everything with less than this number of st
 
 // Control heater 0 and heater 1 in parallel.
 //#define HEATERS_PARALLEL
+
+//LCD status clock interval timer to switch between
+// remaining print time
+// and time to change/pause/interaction
+#define CLOCK_INTERVAL_TIME 5
 
 //===========================================================================
 //=============================Buffers           ============================
@@ -396,13 +382,20 @@ const unsigned int dropsegments=5; //everything with less than this number of st
   #endif
 #endif
 
+/**
+ * Include capabilities in M115 output
+ */
+#define EXTENDED_CAPABILITIES_REPORT
+
+/**
+ * Enable M120/M121 G-code commands
+ * 
+ */
+//#define M120_M121_ENABLED  //Be careful enabling and using these G-code commands.
+
 //===========================================================================
 //=============================  Define Defines  ============================
 //===========================================================================
-
-#if EXTRUDERS > 1 && defined TEMP_SENSOR_1_AS_REDUNDANT
-  #error "You cannot use TEMP_SENSOR_1_AS_REDUNDANT if EXTRUDERS > 1"
-#endif
 
 #if EXTRUDERS > 1 && defined HEATERS_PARALLEL
   #error "You cannot use HEATERS_PARALLEL if EXTRUDERS > 1"
@@ -460,6 +453,10 @@ const unsigned int dropsegments=5; //everything with less than this number of st
 #if TEMP_SENSOR_BED == 0
   #undef BED_MINTEMP
   #undef BED_MAXTEMP
+#endif
+#if TEMP_SENSOR_AMBIENT == 0
+  #undef AMBIENT_MINTEMP
+  #undef AMBIENT_MAXTEMP
 #endif
 
 

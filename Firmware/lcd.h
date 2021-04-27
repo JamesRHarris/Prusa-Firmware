@@ -11,8 +11,6 @@
 extern FILE _lcdout;
 
 #define lcdout (&_lcdout)
-extern int lcd_putchar(char c, FILE *stream);
-
 
 extern void lcd_init(void);
 
@@ -20,12 +18,9 @@ extern void lcd_refresh(void);
 
 extern void lcd_refresh_noclear(void);
 
-
-
 extern void lcd_clear(void);
 
 extern void lcd_home(void);
-
 
 /*extern void lcd_no_display(void);
 extern void lcd_display(void);
@@ -45,8 +40,10 @@ extern void lcd_set_cursor(uint8_t col, uint8_t row);
 extern void lcd_createChar_P(uint8_t, const uint8_t*);
 
 
+// char c is non-standard, however it saves 1B on stack
+extern int lcd_putc(char c);
+extern int lcd_putc_at(uint8_t c, uint8_t r, char ch);
 
-extern int lcd_putc(int c);
 extern int lcd_puts_P(const char* str);
 extern int lcd_puts_at_P(uint8_t c, uint8_t r, const char* str);
 extern int lcd_printf_P(const char* format, ...);
@@ -64,20 +61,16 @@ extern void lcd_print(long, int = 10);
 extern void lcd_print(unsigned long, int = 10);
 extern void lcd_print(double, int = 2);
 
+//! @brief Clear screen
 #define ESC_2J     "\x1b[2J"
+//! @brief Show cursor
 #define ESC_25h    "\x1b[?25h"
+//! @brief Hide cursor
 #define ESC_25l    "\x1b[?25l"
+//! @brief Set cursor to
+//! @param c column
+//! @param r row
 #define ESC_H(c,r) "\x1b["#r";"#c"H"
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -124,22 +117,12 @@ extern lcd_lcdupdate_func_t lcd_lcdupdate_func;
 
 
 
-
-
-
 extern uint8_t lcd_clicked(void);
 
 extern void lcd_beeper_quick_feedback(void);
 
 //Cause an LCD refresh, and give the user visual or audible feedback that something has happened
 extern void lcd_quick_feedback(void);
-
-
-
-
-
-
-
 
 extern void lcd_update(uint8_t lcdDrawUpdateOverride);
 
@@ -169,29 +152,6 @@ public:
 private:
     bool m_updateEnabled;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**
-* Implementation of the LCD display routines for a Hitachi HD44780 display. These are common LCD character displays.
-* When selecting the Russian language, a slightly different LCD implementation is used to handle UTF8 characters.
-**/
 
 
 ////////////////////////////////////
@@ -229,8 +189,6 @@ private:
 #define encrot3 1
 
 
-
-
 //Custom characters defined in the first 8 characters of the LCD
 #define LCD_STR_BEDTEMP     "\x00"
 #define LCD_STR_DEGREE      "\x01"
@@ -246,7 +204,6 @@ private:
 
 extern void lcd_set_custom_characters(void);
 extern void lcd_set_custom_characters_arrows(void);
-extern void lcd_set_custom_characters_progress(void);
 extern void lcd_set_custom_characters_nextpage(void);
 extern void lcd_set_custom_characters_degree(void);
 

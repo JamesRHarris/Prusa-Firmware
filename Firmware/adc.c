@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <avr/io.h>
 #include <avr/pgmspace.h>
+#include "pins.h"
 
 uint8_t adc_state;
 uint8_t adc_count;
@@ -18,14 +19,14 @@ uint16_t adc_sim_mask;
 
 void adc_init(void)
 {
-	printf_P(PSTR("adc_init\n"));
+	puts_P(PSTR("adc_init"));
 	adc_sim_mask = 0x00;
 	ADCSRA |= (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
 	ADMUX |= (1 << REFS0);
 	ADCSRA |= (1 << ADEN);
 //	ADCSRA |= (1 << ADIF) | (1 << ADSC);
-	DIDR0 = (ADC_CHAN_MSK & 0xff);
-	DIDR2 = (ADC_CHAN_MSK >> 8);
+	DIDR0 = ((ADC_CHAN_MSK & ADC_DIDR_MSK) & 0xff);
+	DIDR2 = ((ADC_CHAN_MSK & ADC_DIDR_MSK) >> 8);
 	adc_reset();
 //	adc_sim_mask = 0b0101;
 //	adc_sim_mask = 0b100101;
